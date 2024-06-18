@@ -25,40 +25,13 @@ def find_egg_contour(src, threshold):
         cv2.imshow("Contour Points", src)
     return contours_full, contours_simple
 
-parser = argparse.ArgumentParser(description='Code for Creating Bounding boxes and circles for contours tutorial.')
-parser.add_argument('--input', help='Path to input image.', default='test2.jpg')
-args = parser.parse_args()
-src = cv2.imread(cv2.samples.findFile(args.input))
-if src is None:
-    print('Could not open or find the image:', args.input)
-    exit(0)
-# Convert image to gray and blur it
-
-threshold = 100
-contours, contours_simple = find_egg_contour(src.copy(), threshold)
-
-for i in range(len(contours)):
-    color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
-    cv2.drawContours(src, contours, i, color, thickness=2, lineType=cv2.LINE_AA)
-
-if DEBUG:
-    source_window = 'Contours'
-    cv2.namedWindow(source_window)
-    cv2.imshow(source_window, src)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
-
-contours_simple = np.array(contours_simple, dtype=np.int32)
-_, length, _, coor = contours_simple.shape
-contours_simple = contours_simple.reshape((length, coor))
-h, w, _ = src.shape
-
-def transform2world(img_points):
-    recenter = np.array([
-        [w / 2, h / 2],
-    ])
-    recentered_img = img_points - recenter
-    return recentered_img
+def transform2world(img_points, src_img):
+        h, w, _ = src_img.shape
+        recenter = np.array([
+            [w / 2, h / 2],
+        ])
+        recentered_img = img_points - recenter
+        return recentered_img
 
 def cart2pol(x, y):
     rho = np.sqrt(x**2 + y**2)
@@ -70,9 +43,36 @@ def pol2cart(rho, phi):
     y = rho * np.sin(phi)
     return (x, y)
 
-contours_simple = transform2world(contours_simple)
-radius, radiances = cart2pol(contours_simple[:, 0], contours_simple[:, 1])
-plt.axes(projection = 'polar') 
-for r, phi in zip(radius, radiances): 
-    plt.polar(phi, r, 'g.') 
-plt.show() 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Code for Creating Bounding boxes and circles for contours tutorial.')
+    parser.add_argument('--input', help='Path to input image.', default='test2.jpg')
+    args = parser.parse_args()
+    src = cv2.imread(cv2.samples.findFile(args.input))
+    if src is None:
+        print('Could not open or find the image:', args.input)
+        exit(0)
+    # Convert image to gray and blur it
+
+    threshold = 100
+    contours, contours_simple = find_egg_contour(src.copy(), threshold)
+
+    for i in range(len(contours)):
+        color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
+        cv2.drawContours(src, contours, i, color, thickness=2, lineType=cv2.LINE_AA)
+
+    if DEBUG:
+        source_window = 'Contours'
+        cv2.namedWindow(source_window)
+        cv2.imshow(source_window, src)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+
+    contours_simple = np.array(contours_simple, dtype=np.int32)
+    _, length, _, coor = contours_simple.shape
+    contours_simple = contours_simple.reshape((length, coor))
+    contours_simple = transform2world(contours_simple, src)
+    radius, radiances = cart2pol(contours_simple[:, 0], contours_simple[:, 1])
+    plt.axes(projection = 'polar') 
+    for r, phi in zip(radius, radiances): 
+        plt.polar(phi, r, 'g.') 
+    plt.show() 
